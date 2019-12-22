@@ -24,7 +24,7 @@ class ResourceContainer
 {
 public:
   
-    template <typename parameter>
+    
     resource& get(identifier id)
     {
         auto found = mResourceMap.find(id);
@@ -37,6 +37,7 @@ public:
         assert(found != mResourceMap.end());
         return *found->second;
     }
+    
     void load(identifier id, const std::string& filename)
     {
         std::unique_ptr <resource> resources(new resource());
@@ -45,7 +46,8 @@ public:
         std::pair<std::map<identifier, std::unique_ptr<resource>>::iterator, bool> inserted = mResourceMap.insert(std::make_pair(id, std::move (resources)));
         assert(inserted.second);
     }
-    void load(identifier id, const std::string& filename,const parameter& secondParameter)
+    template <typename parameter>
+    void load(identifier id, const std::string& filename, const parameter& secondParameter)
     {
         std::unique_ptr <resource> resources(new resource());
         if (!resources->loadFromFile(filename,secondParameter))
@@ -58,12 +60,34 @@ private:
 };
 int main()
 {
-    ResourceContainer<sf::Texture,textures::ID> a;
-    sf::Sprite playerPlane;
-    a.load(textures::airplane, "rocket.png");
-    a.load(textures::airplane, "rocket.png");
-    a.load(textures::rocket, "rocket.jpg");
-    a.load(textures::landscape, "desert.png");
-    playerPlane.setTexture(a.get(textures::airplane));
+    sf::RenderWindow window(sf::VideoMode(640, 480), "text", sf::Style::Default);
+    ResourceContainer<sf::Texture, textures::ID> tcontainer;
+    try
+    {
+        tcontainer.load(textures::airplane, "rocket.png");
+        tcontainer.load(textures::landscape, "desert.png");
+    }
+    catch (std::runtime_error & e)
+    {
+        std::cout << "Exceptie: " << e.what() << std::endl;
+        return 1;
+    }
+ 
+    sf::Sprite airplane(tcontainer.get(textures::airplane)), 
+               landscape(tcontainer.get(textures::landscape));
+    while (window.isOpen())
+    {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+                return 0;
+        }
+        window.clear();
+        window.draw(landscape);
+        window.draw(airplane);
+        window.display();
+    }
+
 
 }
